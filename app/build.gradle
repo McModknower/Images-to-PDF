@@ -1,6 +1,10 @@
 apply plugin: 'com.android.application'
 apply from: '../config/checkstyle.gradle'
 
+plugins {
+    id 'jacoco'
+}
+
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
@@ -127,6 +131,9 @@ dependencies {
     })
 }
 
+
+
+jacocoTestReport.dependsOn(test) // tests are required to run before generating the report
 preBuild.dependsOn('checkstyle')
 assemble.dependsOn('lint')
 check.dependsOn('checkstyle')
