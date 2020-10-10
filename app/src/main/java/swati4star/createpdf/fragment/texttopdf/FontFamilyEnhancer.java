@@ -11,7 +11,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.itextpdf.text.Font;
 
 import swati4star.createpdf.R;
-import swati4star.createpdf.interfaces.Enhancer;
+import swati4star.createpdf.interfaces.enhancers.Enhancer;
 import swati4star.createpdf.model.EnhancementOptionsEntity;
 import swati4star.createpdf.model.TextToPDFOptions;
 import swati4star.createpdf.preferences.TextToPdfPreferences;

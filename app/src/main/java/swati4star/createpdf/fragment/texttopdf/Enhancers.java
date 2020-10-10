@@ -2,7 +2,7 @@ package swati4star.createpdf.fragment.texttopdf;
 
 import android.app.Activity;
 
-import swati4star.createpdf.interfaces.Enhancer;
+import swati4star.createpdf.interfaces.enhancers.Enhancer;
 import swati4star.createpdf.model.TextToPDFOptions;
 
 /**

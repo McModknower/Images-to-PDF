@@ -27,7 +27,8 @@ public class ImageEnhancementOptionsUtils {
     }
 
     public ArrayList<EnhancementOptionsEntity> getEnhancementOptions(Context context,
-                                                                     ImageToPDFOptions pdfOptions) {
+                                                                     ImageToPDFOptions pdfOptions,
+                                                                     EnhancerBundle enhancers) {
         ArrayList<EnhancementOptionsEntity> options = new ArrayList<>();
         int passwordIcon = R.drawable.baseline_enhanced_encryption_24;
         if (pdfOptions.isPasswordProtected())

@@ -4,7 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import swati4star.createpdf.R;
-import swati4star.createpdf.interfaces.Enhancer;
+import swati4star.createpdf.interfaces.enhancers.Enhancer;
 import swati4star.createpdf.model.EnhancementOptionsEntity;
 import swati4star.createpdf.preferences.TextToPdfPreferences;
 import swati4star.createpdf.util.PageSizeUtils;

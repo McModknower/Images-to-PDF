@@ -58,6 +58,7 @@ import swati4star.createpdf.adapter.EnhancementOptionsAdapter;
 import swati4star.createpdf.database.DatabaseHelper;
 import swati4star.createpdf.interfaces.OnItemClickListener;
 import swati4star.createpdf.interfaces.OnPDFCreatedInterface;
+import swati4star.createpdf.interfaces.enhancers.EnhancerParentContract;
 import swati4star.createpdf.model.EnhancementOptionsEntity;
 import swati4star.createpdf.model.ImageToPDFOptions;
 import swati4star.createpdf.model.Watermark;
@@ -65,6 +66,7 @@ import swati4star.createpdf.util.Constants;
 import swati4star.createpdf.util.CreatePdf;
 import swati4star.createpdf.util.DefaultTextWatcher;
 import swati4star.createpdf.util.DialogUtils;
+import swati4star.createpdf.util.EnhancerBundle;
 import swati4star.createpdf.util.FileUtils;
 import swati4star.createpdf.util.ImageEnhancementOptionsUtils;
 import swati4star.createpdf.util.ImageUtils;
@@ -96,7 +98,7 @@ import static swati4star.createpdf.util.WatermarkUtils.getStyleValueFromName;
  * ImageToPdfFragment fragment to start with creating PDF
  */
 public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
-        OnPDFCreatedInterface {
+        OnPDFCreatedInterface, EnhancerParentContract.View {
 
     private static final int INTENT_REQUEST_APPLY_FILTER = 10;
     private static final int INTENT_REQUEST_PREVIEW_IMAGE = 11;
@@ -131,8 +133,10 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
     private int mMarginLeft = 50;
     private int mMarginRight = 38;
     private String mPageNumStyle;
-    private int mChoseId;
     private boolean mPermissionGranted = false;
+
+    private EnhancerBundle mEnhancers;
+    private EnhancementOptionsAdapter mEnhancementOptionsAdapter;
 
 
     @Override
@@ -148,6 +152,8 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
         ButterKnife.bind(this, root);
 
         // Initialize variables
+        mEnhancers = new EnhancerBundle();
+
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mActivity);
         mPermissionGranted = PermissionsUtils.getInstance().checkRuntimePermissions(this,
                 READ_WRITE_CAMERA_PERMISSIONS);
@@ -210,10 +216,9 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
         mEnhancementOptionsRecycleView.setLayoutManager(mGridLayoutManager);
         ImageEnhancementOptionsUtils imageEnhancementOptionsUtilsInstance = ImageEnhancementOptionsUtils.getInstance();
         ArrayList<EnhancementOptionsEntity> list = imageEnhancementOptionsUtilsInstance.getEnhancementOptions(mActivity,
-                mPdfOptions);
-        EnhancementOptionsAdapter adapter =
-                new EnhancementOptionsAdapter(this, list);
-        mEnhancementOptionsRecycleView.setAdapter(adapter);
+                mPdfOptions, mEnhancers);
+        mEnhancementOptionsAdapter = new EnhancementOptionsAdapter(this, list);
+        mEnhancementOptionsRecycleView.setAdapter(mEnhancementOptionsAdapter);
     }
 
     /**
@@ -518,11 +523,9 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
     }
 
     private void passwordProtectPDF() {
-        final MaterialDialog dialog = new MaterialDialog.Builder(mActivity)
-                .title(R.string.set_password)
+        final MaterialDialog dialog = DialogUtils.getInstance()
+                .createCustomDialogWithoutContent(mActivity, R.string.set_password)
                 .customView(R.layout.custom_dialog, true)
-                .positiveText(android.R.string.ok)
-                .negativeText(android.R.string.cancel)
                 .neutralText(R.string.remove_dialog)
                 .build();
 
@@ -563,11 +566,9 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
     }
 
     private void addWatermark() {
-        final MaterialDialog dialog = new MaterialDialog.Builder(mActivity)
-                .title(R.string.add_watermark)
+        final MaterialDialog dialog = DialogUtils.getInstance()
+                .createCustomDialogWithoutContent(mActivity, R.string.add_watermark)
                 .customView(R.layout.add_watermark_dialog, true)
-                .positiveText(android.R.string.ok)
-                .negativeText(android.R.string.cancel)
                 .neutralText(R.string.remove_dialog)
                 .build();
 
@@ -781,7 +782,7 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
 
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         mPageNumStyle = mSharedPreferences.getString (Constants.PREF_PAGE_STYLE, null);
-        mChoseId = mSharedPreferences.getInt (Constants.PREF_PAGE_STYLE_ID, -1);
+        int choseId = mSharedPreferences.getInt (Constants.PREF_PAGE_STYLE_ID, -1);
 
         RelativeLayout dialogLayout = (RelativeLayout) getLayoutInflater ()
                 .inflate (R.layout.add_pgnum_dialog, null);
@@ -792,10 +793,10 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
         RadioGroup rg = dialogLayout.findViewById(R.id.radioGroup);
         CheckBox cbDefault = dialogLayout.findViewById (R.id.set_as_default);
 
-        if (mChoseId > 0) {
+        if (choseId > 0) {
             cbDefault.setChecked (true);
             rg.clearCheck ();
-            rg.check (mChoseId);
+            rg.check (choseId);
         }
 
         MaterialDialog materialDialog = new MaterialDialog.Builder(mActivity)
@@ -807,7 +808,6 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
                 .onPositive(((dialog, which) -> {
 
                     int checkedRadioButtonId = rg.getCheckedRadioButtonId ();
-                    mChoseId = checkedRadioButtonId;
                     if (checkedRadioButtonId == rbOpt1.getId ()) {
                         mPageNumStyle = Constants.PG_NUM_STYLE_PAGE_X_OF_N;
                     } else if (checkedRadioButtonId == rbOpt2.getId ()) {
@@ -816,7 +816,7 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
                         mPageNumStyle = Constants.PG_NUM_STYLE_X;
                     }
                     if (cbDefault.isChecked ()) {
-                        SharedPreferencesUtil.getInstance().setDefaultPageNumStyle(editor, mPageNumStyle, mChoseId);
+                        SharedPreferencesUtil.getInstance().setDefaultPageNumStyle(editor, mPageNumStyle, checkedRadioButtonId);
                     } else {
                         SharedPreferencesUtil.getInstance().clearDefaultPageNumStyle(editor);
                     }
@@ -824,5 +824,10 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
                 .onNeutral((((dialog, which) -> mPageNumStyle = null)))
                 .build();
         materialDialog.show();
+    }
+
+    @Override
+    public void updateView() {
+        mEnhancementOptionsAdapter.notifyDataSetChanged();
     }
 }

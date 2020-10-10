@@ -1,4 +1,4 @@
-package swati4star.createpdf.interfaces;
+package swati4star.createpdf.interfaces.enhancers;
 
 import swati4star.createpdf.model.EnhancementOptionsEntity;
 
@@ -15,4 +15,13 @@ public interface Enhancer {
      * @return The {@link EnhancementOptionsEntity} for this {@link Enhancer}.
      */
     EnhancementOptionsEntity getEnhancementOptionsEntity();
+
+    /**
+     * reset the values this Enhancer stored.
+     * For example set the Quality to the value stored in the SharedPreferences
+     *
+     * (impl note: {@code default} cause there are some enhancers for the TextToPdfFragment
+     * that i don't wanna touch right now)
+     */
+    default void resetValues() { }
 }

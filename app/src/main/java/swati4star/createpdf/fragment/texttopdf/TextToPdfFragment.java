@@ -25,7 +25,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import swati4star.createpdf.R;
 import swati4star.createpdf.adapter.EnhancementOptionsAdapter;
-import swati4star.createpdf.interfaces.Enhancer;
+import swati4star.createpdf.interfaces.enhancers.Enhancer;
 import swati4star.createpdf.interfaces.OnItemClickListener;
 import swati4star.createpdf.interfaces.OnTextToPdfInterface;
 import swati4star.createpdf.model.EnhancementOptionsEntity;
