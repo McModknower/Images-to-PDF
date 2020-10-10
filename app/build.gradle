@@ -134,7 +134,6 @@ dependencies {
 
 
 
-jacocoTestReport.dependsOn(test) // tests are required to run before generating the report
 preBuild.dependsOn('checkstyle')
 assemble.dependsOn('lint')
 check.dependsOn('checkstyle')
