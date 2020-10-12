@@ -816,7 +816,8 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
                         mPageNumStyle = Constants.PG_NUM_STYLE_X;
                     }
                     if (cbDefault.isChecked ()) {
-                        SharedPreferencesUtil.getInstance().setDefaultPageNumStyle(editor, mPageNumStyle, checkedRadioButtonId);
+                        SharedPreferencesUtil.getInstance().setDefaultPageNumStyle(editor,
+                                mPageNumStyle, checkedRadioButtonId);
                     } else {
                         SharedPreferencesUtil.getInstance().clearDefaultPageNumStyle(editor);
                     }

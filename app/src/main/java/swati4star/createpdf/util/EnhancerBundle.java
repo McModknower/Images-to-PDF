@@ -14,51 +14,51 @@ import swati4star.createpdf.interfaces.enhancers.PdfWriterEnhancer;
 
 public class EnhancerBundle {
 
-    private ArrayList<DocumentEnhancer> documentEnhancers;
-    private ArrayList<PdfWriterEnhancer> writerEnhancers;
-    private ArrayList<ImageEnhancer> imageEnhancers;
-    private ArrayList<Enhancer> otherEnhancers;
+    private ArrayList<DocumentEnhancer> mDocumentEnhancers;
+    private ArrayList<PdfWriterEnhancer> mWriterEnhancers;
+    private ArrayList<ImageEnhancer> mImageEnhancers;
+    private ArrayList<Enhancer> mOtherEnhancers;
 
     public EnhancerBundle() {
-        documentEnhancers = new ArrayList<>();
-        writerEnhancers = new ArrayList<>();
-        imageEnhancers = new ArrayList<>();
-        otherEnhancers = new ArrayList<>();
+        mDocumentEnhancers = new ArrayList<>();
+        mWriterEnhancers = new ArrayList<>();
+        mImageEnhancers = new ArrayList<>();
+        mOtherEnhancers = new ArrayList<>();
     }
 
     public void runDocumentEnhancers(Document doc) {
-        for(DocumentEnhancer de: documentEnhancers)
+        for (DocumentEnhancer de: mDocumentEnhancers)
             de.enhanceDocument(doc);
     }
 
     public void runPdfWriterEnhancers(PdfWriter writer) {
-        for(PdfWriterEnhancer pe: writerEnhancers)
+        for (PdfWriterEnhancer pe: mWriterEnhancers)
             pe.enhancePdfWriter(writer);
     }
 
     public void runImageEnhancers(Image image) {
-        for(ImageEnhancer ie: imageEnhancers)
+        for (ImageEnhancer ie: mImageEnhancers)
             ie.enhanceImage(image);
     }
 
     public void addEnhancer(Enhancer e) {
-        if(e instanceof DocumentEnhancer)
-            documentEnhancers.add((DocumentEnhancer) e);
-        else if(e instanceof PdfWriterEnhancer)
-            writerEnhancers.add((PdfWriterEnhancer) e);
-        else if(e instanceof ImageEnhancer)
-            imageEnhancers.add((ImageEnhancer) e);
+        if (e instanceof DocumentEnhancer)
+            mDocumentEnhancers.add((DocumentEnhancer) e);
+        else if (e instanceof PdfWriterEnhancer)
+            mWriterEnhancers.add((PdfWriterEnhancer) e);
+        else if (e instanceof ImageEnhancer)
+            mImageEnhancers.add((ImageEnhancer) e);
         else
-            otherEnhancers.add(e);
+            mOtherEnhancers.add(e);
 
     }
 
     public List<Enhancer> getEnhancers() {
         List<Enhancer> result = new ArrayList<>();
-        result.addAll(documentEnhancers);
-        result.addAll(writerEnhancers);
-        result.addAll(imageEnhancers);
-        result.addAll(otherEnhancers);
+        result.addAll(mDocumentEnhancers);
+        result.addAll(mWriterEnhancers);
+        result.addAll(mImageEnhancers);
+        result.addAll(mOtherEnhancers);
         return result;
     }
 
