@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -45,6 +46,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -59,6 +61,7 @@ import swati4star.createpdf.database.DatabaseHelper;
 import swati4star.createpdf.interfaces.OnItemClickListener;
 import swati4star.createpdf.interfaces.OnPDFCreatedInterface;
 import swati4star.createpdf.interfaces.enhancers.EnhancerParentContract;
+import swati4star.createpdf.interfaces.enhancers.MethodEnhancer;
 import swati4star.createpdf.model.EnhancementOptionsEntity;
 import swati4star.createpdf.model.ImageToPDFOptions;
 import swati4star.createpdf.model.Watermark;
@@ -68,13 +71,13 @@ import swati4star.createpdf.util.DefaultTextWatcher;
 import swati4star.createpdf.util.DialogUtils;
 import swati4star.createpdf.util.EnhancerBundle;
 import swati4star.createpdf.util.FileUtils;
-import swati4star.createpdf.util.ImageEnhancementOptionsUtils;
 import swati4star.createpdf.util.ImageUtils;
 import swati4star.createpdf.util.MorphButtonUtility;
 import swati4star.createpdf.util.PageSizeUtils;
 import swati4star.createpdf.util.PermissionsUtils;
 import swati4star.createpdf.util.SharedPreferencesUtil;
 import swati4star.createpdf.util.StringUtils;
+import swati4star.createpdf.util.enhancer.PasswordEnhancer;
 
 import static swati4star.createpdf.util.Constants.DEFAULT_BORDER_WIDTH;
 import static swati4star.createpdf.util.Constants.DEFAULT_COMPRESSION;
@@ -85,12 +88,10 @@ import static swati4star.createpdf.util.Constants.DEFAULT_PAGE_SIZE;
 import static swati4star.createpdf.util.Constants.DEFAULT_PAGE_SIZE_TEXT;
 import static swati4star.createpdf.util.Constants.DEFAULT_QUALITY_VALUE;
 import static swati4star.createpdf.util.Constants.IMAGE_SCALE_TYPE_ASPECT_RATIO;
-import static swati4star.createpdf.util.Constants.MASTER_PWD_STRING;
 import static swati4star.createpdf.util.Constants.OPEN_SELECT_IMAGES;
 import static swati4star.createpdf.util.Constants.READ_WRITE_CAMERA_PERMISSIONS;
 import static swati4star.createpdf.util.Constants.RESULT;
 import static swati4star.createpdf.util.Constants.STORAGE_LOCATION;
-import static swati4star.createpdf.util.Constants.appName;
 import static swati4star.createpdf.util.WatermarkUtils.getStyleNameFromFont;
 import static swati4star.createpdf.util.WatermarkUtils.getStyleValueFromName;
 
@@ -152,8 +153,6 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
         ButterKnife.bind(this, root);
 
         // Initialize variables
-        mEnhancers = new EnhancerBundle();
-
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mActivity);
         mPermissionGranted = PermissionsUtils.getInstance().checkRuntimePermissions(this,
                 READ_WRITE_CAMERA_PERMISSIONS);
@@ -209,14 +208,83 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
     }
 
     /**
+     * Create Enhancers and add them to the EnhancerBundle
+     */
+    private void createEnhancers() {
+        mEnhancers = new EnhancerBundle();
+        Context ctx = getContext();
+
+        mEnhancers.addEnhancer(new PasswordEnhancer(mActivity, this));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(this::cropImage, new EnhancementOptionsEntity(
+                ctx, R.drawable.baseline_crop_rotate_24, R.string.edit_images_text)));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(this::compressImage, new EnhancementOptionsEntity(
+                ctx, R.drawable.ic_compress_image,
+                String.format(ctx.getResources().getString(R.string.compress_image),
+                        mPdfOptions.getQualityString()))));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(() -> startActivityForResult(
+                ImageEditor.getStartIntent(mActivity, mImagesUri), INTENT_REQUEST_APPLY_FILTER),
+                new EnhancementOptionsEntity(ctx,
+                        R.drawable.ic_photo_filter_black_24dp, R.string.filter_images_Text)));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(() -> mPageSizeUtils.showPageSizeDialog(false),
+                new EnhancementOptionsEntity(ctx, R.drawable.ic_page_size_24dp, R.string.set_page_size_text)));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(() -> ImageUtils.getInstance()
+                .showImageScaleTypeDialog(mActivity, false),
+                new EnhancementOptionsEntity(ctx, R.drawable.ic_aspect_ratio_black_24dp, R.string.image_scale_type)));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(() -> startActivityForResult(
+                PreviewActivity.getStartIntent(mActivity, mImagesUri),
+                INTENT_REQUEST_PREVIEW_IMAGE), new EnhancementOptionsEntity(ctx,
+                R.drawable.ic_play_circle_outline_black_24dp, R.string.preview_image_to_pdf)));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(this::addBorder, new EnhancementOptionsEntity(ctx,
+                R.drawable.ic_border_image_black_24dp,
+                String.format(ctx.getResources().getString(R.string.border_dialog_title),
+                        mPdfOptions.getBorderWidth()))));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(() -> startActivityForResult(
+                RearrangeImages.getStartIntent(mActivity, mImagesUri),
+                INTENT_REQUEST_REARRANGE_IMAGE), new EnhancementOptionsEntity(ctx,
+                R.drawable.ic_rearrange, R.string.rearrange_images)));
+
+        Drawable iconGrayScale = ctx.getResources().getDrawable(R.drawable.ic_photo_filter_black_24dp);
+        iconGrayScale.setColorFilter(Color.GRAY, android.graphics.PorterDuff.Mode.SRC_IN);
+        mEnhancers.addEnhancer(new MethodEnhancer(() -> createPdf(true), new EnhancementOptionsEntity(
+                iconGrayScale,  ctx.getResources().getString(R.string.grayscale_images)
+        )));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(this::addMargins, new EnhancementOptionsEntity(
+                ctx, R.drawable.ic_page_size_24dp, R.string.add_margins
+        )));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(this::addPageNumbers, new EnhancementOptionsEntity(
+                ctx, R.drawable.ic_format_list_numbered_black_24dp, R.string.show_pg_num
+        )));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(this::addWatermark, new EnhancementOptionsEntity(
+                ctx, R.drawable.ic_branding_watermark_black_24dp, R.string.add_watermark
+        )));
+
+        mEnhancers.addEnhancer(new MethodEnhancer(this::setPageColor, new EnhancementOptionsEntity(
+                ctx, R.drawable.ic_page_color, R.string.page_color
+        )));
+    }
+
+    /**
      * Shows enhancement options
      */
     private void showEnhancementOptions() {
+        //This is here so the enhancer creation can use the PdfOptions
+        if (mEnhancers == null)
+            createEnhancers();
+
         GridLayoutManager mGridLayoutManager = new GridLayoutManager(mActivity, 2);
         mEnhancementOptionsRecycleView.setLayoutManager(mGridLayoutManager);
-        ImageEnhancementOptionsUtils imageEnhancementOptionsUtilsInstance = ImageEnhancementOptionsUtils.getInstance();
-        ArrayList<EnhancementOptionsEntity> list = imageEnhancementOptionsUtilsInstance.getEnhancementOptions(mActivity,
-                mPdfOptions, mEnhancers);
+        List<EnhancementOptionsEntity> list = mEnhancers.getEnhancementOptionsEntities();
         mEnhancementOptionsAdapter = new EnhancementOptionsAdapter(this, list);
         mEnhancementOptionsRecycleView.setAdapter(mEnhancementOptionsAdapter);
     }
@@ -263,12 +331,11 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
         mPdfOptions.setPageSize(PageSizeUtils.mPageSize);
         mPdfOptions.setImageScaleType(ImageUtils.getInstance().mImageScaleType);
         mPdfOptions.setPageNumStyle(mPageNumStyle);
-        mPdfOptions.setMasterPwd(mSharedPreferences.getString(MASTER_PWD_STRING, appName));
         mPdfOptions.setPageColor(mPageColor);
         mPdfOptions.setOutFileName(filename);
         if (isGrayScale)
             saveImagesInGrayScale();
-        new CreatePdf(mPdfOptions, mHomePath, ImageToPdfFragment.this).execute();
+        new CreatePdf(mPdfOptions, mHomePath, ImageToPdfFragment.this, mEnhancers).execute();
     }
 
     @OnClick(R.id.pdfOpen)
@@ -385,53 +452,7 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
             StringUtils.getInstance().showSnackbar(mActivity, R.string.snackbar_no_images);
             return;
         }
-        switch (position) {
-            case 0:
-                passwordProtectPDF();
-                break;
-            case 1:
-                cropImage();
-                break;
-            case 2:
-                compressImage();
-                break;
-            case 3:
-                startActivityForResult(ImageEditor.getStartIntent(mActivity, mImagesUri),
-                        INTENT_REQUEST_APPLY_FILTER);
-                break;
-            case 4:
-                mPageSizeUtils.showPageSizeDialog(false);
-                break;
-            case 5:
-                ImageUtils.getInstance().showImageScaleTypeDialog(mActivity, false);
-                break;
-            case 6:
-                startActivityForResult(PreviewActivity.getStartIntent(mActivity, mImagesUri),
-                        INTENT_REQUEST_PREVIEW_IMAGE);
-                break;
-            case 7:
-                addBorder();
-                break;
-            case 8:
-                startActivityForResult(RearrangeImages.getStartIntent(mActivity, mImagesUri),
-                        INTENT_REQUEST_REARRANGE_IMAGE);
-                break;
-            case 9:
-                createPdf(true);
-                break;
-            case 10:
-                addMargins();
-                break;
-            case 11:
-                addPageNumbers();
-                break;
-            case 12:
-                addWatermark();
-                break;
-            case 13:
-                setPageColor();
-                break;
-        }
+        mEnhancers.getEnhancers().get(position).enhance();
     }
 
 
@@ -520,49 +541,6 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
                         StringUtils.getInstance().showSnackbar(mActivity, R.string.invalid_entry);
                     }
                 }).show();
-    }
-
-    private void passwordProtectPDF() {
-        final MaterialDialog dialog = DialogUtils.getInstance()
-                .createCustomDialogWithoutContent(mActivity, R.string.set_password)
-                .customView(R.layout.custom_dialog, true)
-                .neutralText(R.string.remove_dialog)
-                .build();
-
-        final View positiveAction = dialog.getActionButton(DialogAction.POSITIVE);
-        final View neutralAction = dialog.getActionButton(DialogAction.NEUTRAL);
-        final EditText passwordInput = dialog.getCustomView().findViewById(R.id.password);
-        passwordInput.setText(mPdfOptions.getPassword());
-        passwordInput.addTextChangedListener(
-                new DefaultTextWatcher() {
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
-                        positiveAction.setEnabled(s.toString().trim().length() > 0);
-                    }
-                });
-
-        positiveAction.setOnClickListener(v -> {
-            if (StringUtils.getInstance().isEmpty(passwordInput.getText())) {
-                StringUtils.getInstance().showSnackbar(mActivity, R.string.snackbar_password_cannot_be_blank);
-            } else {
-                mPdfOptions.setPassword(passwordInput.getText().toString());
-                mPdfOptions.setPasswordProtected(true);
-                showEnhancementOptions();
-                dialog.dismiss();
-            }
-        });
-
-        if (StringUtils.getInstance().isNotEmpty(mPdfOptions.getPassword())) {
-            neutralAction.setOnClickListener(v -> {
-                mPdfOptions.setPassword(null);
-                mPdfOptions.setPasswordProtected(false);
-                showEnhancementOptions();
-                dialog.dismiss();
-                StringUtils.getInstance().showSnackbar(mActivity, R.string.password_remove);
-            });
-        }
-        dialog.show();
-        positiveAction.setEnabled(false);
     }
 
     private void addWatermark() {
@@ -744,6 +722,8 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
         mPdfOptions.setPasswordProtected(false);
         mPdfOptions.setWatermarkAdded(false);
         mImagesUri.clear();
+        if (mEnhancers != null)
+            mEnhancers.resetValues();
         showEnhancementOptions();
         mNoOfImages.setVisibility(View.GONE);
         ImageUtils.getInstance().mImageScaleType = mSharedPreferences.getString(DEFAULT_IMAGE_SCALE_TYPE_TEXT,

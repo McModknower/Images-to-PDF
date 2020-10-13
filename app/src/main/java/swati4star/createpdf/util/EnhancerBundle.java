@@ -1,6 +1,7 @@
 package swati4star.createpdf.util;
 
 import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.pdf.PdfWriter;
 
@@ -11,6 +12,7 @@ import swati4star.createpdf.interfaces.enhancers.DocumentEnhancer;
 import swati4star.createpdf.interfaces.enhancers.Enhancer;
 import swati4star.createpdf.interfaces.enhancers.ImageEnhancer;
 import swati4star.createpdf.interfaces.enhancers.PdfWriterEnhancer;
+import swati4star.createpdf.model.EnhancementOptionsEntity;
 
 public class EnhancerBundle {
 
@@ -31,7 +33,7 @@ public class EnhancerBundle {
             de.enhanceDocument(doc);
     }
 
-    public void runPdfWriterEnhancers(PdfWriter writer) {
+    public void runPdfWriterEnhancers(PdfWriter writer) throws DocumentException {
         for (PdfWriterEnhancer pe: mWriterEnhancers)
             pe.enhancePdfWriter(writer);
     }
@@ -53,13 +55,34 @@ public class EnhancerBundle {
 
     }
 
+    /**
+     * Get all Enhancers stored in this bundle
+     */
     public List<Enhancer> getEnhancers() {
         List<Enhancer> result = new ArrayList<>();
+        result.addAll(mOtherEnhancers);
         result.addAll(mDocumentEnhancers);
         result.addAll(mWriterEnhancers);
         result.addAll(mImageEnhancers);
-        result.addAll(mOtherEnhancers);
         return result;
     }
 
+    /**
+     * Get the EnhancementOptionsEntites for all Enhancers in the same order as getEnhancers()
+     */
+    public List<EnhancementOptionsEntity> getEnhancementOptionsEntities() {
+        List<Enhancer> enhancers = getEnhancers();
+        List<EnhancementOptionsEntity> result = new ArrayList<>();
+        for (Enhancer e:enhancers)
+            result.add(e.getEnhancementOptionsEntity());
+        return result;
+    }
+
+    /**
+     * Reset the stored values of the enhancers back to the default
+     */
+    public void resetValues() {
+        for (Enhancer e: getEnhancers())
+            e.resetValues();
+    }
 }

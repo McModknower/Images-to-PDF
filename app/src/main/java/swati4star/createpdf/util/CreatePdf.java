@@ -39,6 +39,7 @@ public class CreatePdf extends AsyncTask<String, String, String> {
     private final ArrayList<String> mImagesUri;
     private final int mBorderWidth;
     private final OnPDFCreatedInterface mOnPDFCreatedInterface;
+    private final EnhancerBundle mEnhancers;
     private boolean mSuccess;
     private String mPath;
     private final String mPageSize;
@@ -55,7 +56,7 @@ public class CreatePdf extends AsyncTask<String, String, String> {
     private final int mPageColor;
 
     public CreatePdf(ImageToPDFOptions mImageToPDFOptions, String parentPath,
-                     OnPDFCreatedInterface onPDFCreated) {
+                     OnPDFCreatedInterface onPDFCreated, EnhancerBundle mEnhancers) {
         this.mImagesUri = mImageToPDFOptions.getImagesUri();
         this.mFileName = mImageToPDFOptions.getOutFileName();
         this.mPassword = mImageToPDFOptions.getPassword();
@@ -75,6 +76,8 @@ public class CreatePdf extends AsyncTask<String, String, String> {
         this.mMasterPwd = mImageToPDFOptions.getMasterPwd();
         this.mPageColor = mImageToPDFOptions.getPageColor();
         mPath = parentPath;
+
+        this.mEnhancers = mEnhancers;
     }
 
     @Override
@@ -111,13 +114,7 @@ public class CreatePdf extends AsyncTask<String, String, String> {
 
             Log.v("Stage 3", "Pdf writer");
 
-            if (mPasswordProtected) {
-                writer.setEncryption(mPassword.getBytes(), mMasterPwd.getBytes(),
-                        PdfWriter.ALLOW_PRINTING | PdfWriter.ALLOW_COPY,
-                        PdfWriter.ENCRYPTION_AES_128);
-
-                Log.v("Stage 3.1", "Set Encryption");
-            }
+            mEnhancers.runPdfWriterEnhancers(writer);
 
             if (mWatermarkAdded) {
                 WatermarkPageEvent watermarkPageEvent = new WatermarkPageEvent();
