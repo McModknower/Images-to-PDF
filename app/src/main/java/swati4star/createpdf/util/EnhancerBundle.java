@@ -1,5 +1,7 @@
 package swati4star.createpdf.util;
 
+import android.support.annotation.NonNull;
+
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
@@ -28,22 +30,22 @@ public class EnhancerBundle {
         mOtherEnhancers = new ArrayList<>();
     }
 
-    public void runDocumentEnhancers(Document doc) {
+    public void runDocumentEnhancers( @NonNull Document doc) {
         for (DocumentEnhancer de: mDocumentEnhancers)
             de.enhanceDocument(doc);
     }
 
-    public void runPdfWriterEnhancers(PdfWriter writer) throws DocumentException {
+    public void runPdfWriterEnhancers( @NonNull PdfWriter writer) throws DocumentException {
         for (PdfWriterEnhancer pe: mWriterEnhancers)
             pe.enhancePdfWriter(writer);
     }
 
-    public void runImageEnhancers(Image image) {
+    public void runImageEnhancers( @NonNull Image image) {
         for (ImageEnhancer ie: mImageEnhancers)
             ie.enhanceImage(image);
     }
 
-    public void addEnhancer(Enhancer e) {
+    public void addEnhancer( @NonNull Enhancer e) {
         if (e instanceof DocumentEnhancer)
             mDocumentEnhancers.add((DocumentEnhancer) e);
         else if (e instanceof PdfWriterEnhancer)

@@ -1,7 +1,5 @@
 package swati4star.createpdf.util;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
@@ -34,16 +32,13 @@ import static swati4star.createpdf.util.Constants.pdfExtension;
 public class CreatePdf extends AsyncTask<String, String, String> {
 
     private final String mFileName;
-    private final String mPassword;
     private final String mQualityString;
     private final ArrayList<String> mImagesUri;
-    private final int mBorderWidth;
     private final OnPDFCreatedInterface mOnPDFCreatedInterface;
     private final EnhancerBundle mEnhancers;
     private boolean mSuccess;
     private String mPath;
     private final String mPageSize;
-    private final boolean mPasswordProtected;
     private final Boolean mWatermarkAdded;
     private final Watermark mWatermark;
     private final int mMarginTop;
@@ -52,19 +47,15 @@ public class CreatePdf extends AsyncTask<String, String, String> {
     private final int mMarginLeft;
     private final String mImageScaleType;
     private final String mPageNumStyle;
-    private final String mMasterPwd;
     private final int mPageColor;
 
     public CreatePdf(ImageToPDFOptions mImageToPDFOptions, String parentPath,
                      OnPDFCreatedInterface onPDFCreated, EnhancerBundle mEnhancers) {
         this.mImagesUri = mImageToPDFOptions.getImagesUri();
         this.mFileName = mImageToPDFOptions.getOutFileName();
-        this.mPassword = mImageToPDFOptions.getPassword();
         this.mQualityString = mImageToPDFOptions.getQualityString();
         this.mOnPDFCreatedInterface = onPDFCreated;
         this.mPageSize = mImageToPDFOptions.getPageSize();
-        this.mPasswordProtected = mImageToPDFOptions.isPasswordProtected();
-        this.mBorderWidth = mImageToPDFOptions.getBorderWidth();
         this.mWatermarkAdded = mImageToPDFOptions.isWatermarkAdded();
         this.mWatermark = mImageToPDFOptions.getWatermark();
         this.mMarginTop = mImageToPDFOptions.getMarginTop();
@@ -73,7 +64,6 @@ public class CreatePdf extends AsyncTask<String, String, String> {
         this.mMarginLeft = mImageToPDFOptions.getMarginLeft();
         this.mImageScaleType = mImageToPDFOptions.getImageScaleType();
         this.mPageNumStyle = mImageToPDFOptions.getPageNumStyle();
-        this.mMasterPwd = mImageToPDFOptions.getMasterPwd();
         this.mPageColor = mImageToPDFOptions.getPageColor();
         mPath = parentPath;
 
@@ -136,13 +126,10 @@ public class CreatePdf extends AsyncTask<String, String, String> {
                 // compressionLevel is a value between 0 (best speed) and 9 (best compression)
                 double qualityMod = quality * 0.09;
                 image.setCompressionLevel((int) qualityMod);
-                image.setBorder(Rectangle.BOX);
-                image.setBorderWidth(mBorderWidth);
+
+                mEnhancers.runImageEnhancers(image);
 
                 Log.v("Stage 5", "Image compressed " + qualityMod);
-
-                BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-                Bitmap bitmap = BitmapFactory.decodeFile(mImagesUri.get(i), bmOptions);
 
                 Log.v("Stage 6", "Image path adding");
 

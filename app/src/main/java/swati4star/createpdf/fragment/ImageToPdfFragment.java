@@ -77,6 +77,8 @@ import swati4star.createpdf.util.PageSizeUtils;
 import swati4star.createpdf.util.PermissionsUtils;
 import swati4star.createpdf.util.SharedPreferencesUtil;
 import swati4star.createpdf.util.StringUtils;
+import swati4star.createpdf.util.enhancer.AddBorderEnhancer;
+import swati4star.createpdf.util.enhancer.CropImageEnhancer;
 import swati4star.createpdf.util.enhancer.PasswordEnhancer;
 
 import static swati4star.createpdf.util.Constants.DEFAULT_BORDER_WIDTH;
@@ -216,8 +218,7 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
 
         mEnhancers.addEnhancer(new PasswordEnhancer(mActivity, this));
 
-        mEnhancers.addEnhancer(new MethodEnhancer(this::cropImage, new EnhancementOptionsEntity(
-                ctx, R.drawable.baseline_crop_rotate_24, R.string.edit_images_text)));
+        mEnhancers.addEnhancer(new CropImageEnhancer(this, mActivity, ctx));
 
         mEnhancers.addEnhancer(new MethodEnhancer(this::compressImage, new EnhancementOptionsEntity(
                 ctx, R.drawable.ic_compress_image,
@@ -241,10 +242,7 @@ public class ImageToPdfFragment extends Fragment implements OnItemClickListener,
                 INTENT_REQUEST_PREVIEW_IMAGE), new EnhancementOptionsEntity(ctx,
                 R.drawable.ic_play_circle_outline_black_24dp, R.string.preview_image_to_pdf)));
 
-        mEnhancers.addEnhancer(new MethodEnhancer(this::addBorder, new EnhancementOptionsEntity(ctx,
-                R.drawable.ic_border_image_black_24dp,
-                String.format(ctx.getResources().getString(R.string.border_dialog_title),
-                        mPdfOptions.getBorderWidth()))));
+        mEnhancers.addEnhancer(new AddBorderEnhancer(ctx, mActivity, this));
 
         mEnhancers.addEnhancer(new MethodEnhancer(() -> startActivityForResult(
                 RearrangeImages.getStartIntent(mActivity, mImagesUri),

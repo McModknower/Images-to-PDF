@@ -132,5 +132,6 @@ public class PasswordEnhancer implements PdfWriterEnhancer {
     @Override
     public void resetValues() {
         mPassword = null;
+        onPasswordRemoved();
     }
 }
